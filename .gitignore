@@ -1,4 +1,5 @@
-/TensorBoard
+/train
+/test
 checkpoint
 cifar10.data-00000-of-00001
 cifar10.index

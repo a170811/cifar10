@@ -31,7 +31,7 @@ def LeNet(x):
     #input: 32*32*3 , output: 28*28*6
     with tf.name_scope('Layer'):
         with tf.name_scope('Weight'):
-            conv1_W = tf.Variable(tf.truncated_normal(shape = (5, 5, 3, 6), mean = mu, stddev = sigma))
+            conv1_W = tf.Variable(tf.truncated_normal(shape = (3, 3, 3, 6), mean = mu, stddev = sigma))
         with tf.name_scope('Biases'):
             conv1_b = tf.Variable(tf.zeros(6))
         conv1 = tf.nn.conv2d(x, conv1_W, strides = [1, 1, 1, 1], padding = 'SAME') + conv1_b
@@ -39,7 +39,7 @@ def LeNet(x):
 
     with tf.name_scope('Layer'):
         with tf.name_scope('Weight'):
-            conv2_W = tf.Variable(tf.truncated_normal(shape = (5, 5, 6, 16), mean = mu, stddev = sigma))
+            conv2_W = tf.Variable(tf.truncated_normal(shape = (3, 3, 6, 16), mean = mu, stddev = sigma))
         with tf.name_scope('Biases'):
             conv2_b = tf.Variable(tf.zeros(16))
         conv2 = tf.nn.conv2d(conv1, conv2_W, strides = [1, 1, 1, 1], padding = 'SAME') + conv2_b
@@ -48,15 +48,16 @@ def LeNet(x):
 
     with tf.name_scope('Layer'):
         with tf.name_scope('Weight'):
-            conv3_W = tf.Variable(tf.truncated_normal(shape = (5, 5, 16, 64), mean = mu, stddev = sigma))
+            conv3_W = tf.Variable(tf.truncated_normal(shape = (3, 3, 16, 32), mean = mu, stddev = sigma))
         with tf.name_scope('Biases'):
-            conv3_b = tf.Variable(tf.zeros(64))
+            conv3_b = tf.Variable(tf.zeros(32))
         conv3 = tf.nn.conv2d(conv2, conv3_W, strides = [1, 1, 1, 1], padding = 'VALID') + conv3_b
         conv3 = tf.nn.relu(conv3)
+        conv3 = tf.nn.max_pool(conv3, ksize = [1, 2, 2, 1], strides = [1, 2, 2, 1], padding = 'VALID')
 
     with tf.name_scope('Layer'):
         with tf.name_scope('Weight'):
-            conv4_W = tf.Variable(tf.truncated_normal(shape = (5, 5, 64, 64), mean = mu, stddev = sigma))
+            conv4_W = tf.Variable(tf.truncated_normal(shape = (4, 4, 32, 64), mean = mu, stddev = sigma))
         with tf.name_scope('Biases'):
             conv4_b = tf.Variable(tf.zeros(64))
         conv4 = tf.nn.conv2d(conv3, conv4_W, strides = [1, 1, 1, 1], padding = 'VALID') + conv4_b
@@ -68,16 +69,16 @@ def LeNet(x):
         fc0 = flatten(conv4)
 
         with tf.name_scope('Weight'):
-            fc1_W = tf.Variable(tf.truncated_normal(shape = (1024, 512), mean = mu, stddev = sigma))
+            fc1_W = tf.Variable(tf.truncated_normal(shape = (256, 256), mean = mu, stddev = sigma))
         with tf.name_scope('Biases'):
-            fc1_b = tf.Variable(tf.zeros(512))
+            fc1_b = tf.Variable(tf.zeros(256))
         fc1 = tf.matmul(fc0, fc1_W) + fc1_b
         fc1 = tf.nn.dropout(fc1, keep_prob)
         fc1 = tf.nn.relu(fc1)
 
     with tf.name_scope('Layer'):
         with tf.name_scope('Weight'):
-            fc2_W = tf.Variable(tf.truncated_normal(shape = (512, 10), mean = mu, stddev = sigma))
+            fc2_W = tf.Variable(tf.truncated_normal(shape = (256, 10), mean = mu, stddev = sigma))
         with tf.name_scope('Biases'):
             fc2_b = tf.Variable(tf.zeros(10))
         logits = tf.matmul(fc1, fc2_W) + fc2_b

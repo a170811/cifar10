@@ -56,9 +56,9 @@ def LeNet(x):
 
     #input: 32*32*3 , output: 28*28*6
     #add_conv(prev, shape, padding, bn, act, max_pool, keep_rate):
-    conv1 = add_conv(x, (3, 3, 3, 6), 'SAME', True, True, False, True, keep_prob)
-    conv2 = add_conv(conv1, (3, 3, 6, 16), 'SAME', True, True, True, False)
-    conv3 = add_conv(conv2, (3, 3, 16, 32), 'VALID', True, True, True, False)
+    conv1 = add_conv(x, (3, 3, 3, 16), 'SAME', True, True, False, True, keep_prob)
+    conv2 = add_conv(conv1, (3, 3, 16, 32), 'SAME', True, True, True, False)
+    conv3 = add_conv(conv2, (3, 3, 32, 32), 'VALID', True, True, True, False)
     conv4 = add_conv(conv3, (3, 3, 32, 64), 'SAME', True, True, False, True, keep_prob)
     conv5 = add_conv(conv4, (4, 4, 64, 64), 'VALID', True, True, True, False)
 

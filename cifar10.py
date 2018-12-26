@@ -30,50 +30,36 @@ x_validation  /= 255
 x_test /= 255
 
 
+
 def LeNet(x):
 
     mu = 0
     sigma = 0.1
 
+    def add_conv(prev, shape, padding, bn, act, max_pool, keep_rate):
+        with tf.name_scope('Layer'):
+            with tf.name_scope('Weight'):
+                conv_W = tf.Variable(tf.truncated_normal(shape = shape, mean = mu, stddev = sigma))
+            with tf.name_scope('Biases'):
+                conv_b = tf.Variable(tf.zeros(shape[3]))
+            conv = tf.nn.conv2d(prev, conv_W, strides = [1, 1, 1, 1], padding = padding) + conv_b
+            if bn:
+                conv = tf.layers.batch_normalization(conv, training = is_training)
+            if act:
+                conv = tf.nn.relu(conv)
+            if keep_rate:
+                conv = tf.nn.dropout(conv, keep_rate)
+            if max_pool:
+                conv = tf.nn.max_pool(conv, ksize = [1, 2, 2, 1], strides = [1, 2, 2, 1], padding = 'VALID')
+        return conv
+
+
     #input: 32*32*3 , output: 28*28*6
-    with tf.name_scope('Layer'):
-        with tf.name_scope('Weight'):
-            conv1_W = tf.Variable(tf.truncated_normal(shape = (3, 3, 3, 6), mean = mu, stddev = sigma))
-        with tf.name_scope('Biases'):
-            conv1_b = tf.Variable(tf.zeros(6))
-        conv1 = tf.nn.conv2d(x, conv1_W, strides = [1, 1, 1, 1], padding = 'SAME') + conv1_b
-        conv1 = tf.layers.batch_normalization(conv1, training = is_training)
-        conv1 = tf.nn.relu(conv1)
-
-    with tf.name_scope('Layer'):
-        with tf.name_scope('Weight'):
-            conv2_W = tf.Variable(tf.truncated_normal(shape = (3, 3, 6, 16), mean = mu, stddev = sigma))
-        with tf.name_scope('Biases'):
-            conv2_b = tf.Variable(tf.zeros(16))
-        conv2 = tf.nn.conv2d(conv1, conv2_W, strides = [1, 1, 1, 1], padding = 'SAME') + conv2_b
-        conv2 = tf.layers.batch_normalization(conv2, training = is_training)
-        conv2 = tf.nn.relu(conv2)
-        conv2 = tf.nn.max_pool(conv2, ksize = [1, 2, 2, 1], strides = [1, 2, 2, 1], padding = 'VALID')
-
-    with tf.name_scope('Layer'):
-        with tf.name_scope('Weight'):
-            conv3_W = tf.Variable(tf.truncated_normal(shape = (3, 3, 16, 32), mean = mu, stddev = sigma))
-        with tf.name_scope('Biases'):
-            conv3_b = tf.Variable(tf.zeros(32))
-        conv3 = tf.nn.conv2d(conv2, conv3_W, strides = [1, 1, 1, 1], padding = 'VALID') + conv3_b
-        conv3 = tf.layers.batch_normalization(conv3, training = is_training)
-        conv3 = tf.nn.relu(conv3)
-        conv3 = tf.nn.max_pool(conv3, ksize = [1, 2, 2, 1], strides = [1, 2, 2, 1], padding = 'VALID')
-
-    with tf.name_scope('Layer'):
-        with tf.name_scope('Weight'):
-            conv4_W = tf.Variable(tf.truncated_normal(shape = (4, 4, 32, 64), mean = mu, stddev = sigma))
-        with tf.name_scope('Biases'):
-            conv4_b = tf.Variable(tf.zeros(64))
-        conv4 = tf.nn.conv2d(conv3, conv4_W, strides = [1, 1, 1, 1], padding = 'VALID') + conv4_b
-        conv4 = tf.layers.batch_normalization(conv4, training = is_training)
-        conv4 = tf.nn.relu(conv4)
-        conv4 = tf.nn.max_pool(conv4, ksize = [1, 2, 2, 1], strides = [1, 2, 2, 1], padding = 'VALID')
+    #add_conv(prev, shape, padding, bn, act, max_pool, keep_rate):
+    conv1 = add_conv(x, (3, 3, 3, 6), 'SAME', True, True, False, 0)
+    conv2 = add_conv(conv1, (3, 3, 6, 16), 'SAME', True, True, True, 0)
+    conv3 = add_conv(conv2, (3, 3, 16, 32), 'VALID', True, True, True, 0)
+    conv4 = add_conv(conv3, (4, 4, 32, 64), 'VALID', True, True, True, 0)
 
 
     with tf.name_scope('Layer'):

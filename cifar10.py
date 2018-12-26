@@ -13,7 +13,7 @@ x_train, x_validation, y_train, y_validation = train_test_split(x_train, y_train
 # Declare variables
 batch_size = 48
 # 32 examples in a mini-batch, smaller batch size means more updates in one epoch
-epochs = 60 # repeat 100 times
+epochs = 70 # repeat 100 times
 num_classes = 10
 rate = 0.001
 #label_dict = {0: "airplane", 1: "automobile", 2: "bird", 3: "cat", 4: "deer", 5: "dog",
@@ -56,20 +56,20 @@ def LeNet(x):
 
     #input: 32*32*3 , output: 28*28*6
     #add_conv(prev, shape, padding, bn, act, max_pool, keep_rate):
-    conv1 = add_conv(x, (3, 3, 3, 16), 'SAME', True, True, False, True, keep_prob)
-    conv2 = add_conv(conv1, (3, 3, 16, 32), 'SAME', True, True, True, False)
-    conv3 = add_conv(conv2, (3, 3, 32, 32), 'VALID', True, True, True, False)
-    conv4 = add_conv(conv3, (3, 3, 32, 64), 'SAME', True, True, False, True, keep_prob)
-    conv5 = add_conv(conv4, (4, 4, 64, 64), 'VALID', True, True, True, False)
+    conv1 = add_conv(x, (3, 3, 3, 28), 'SAME', True, True, False, True, keep_prob)
+    conv2 = add_conv(conv1, (3, 3, 28, 32), 'SAME', True, True, True, False)
+    conv3 = add_conv(conv2, (3, 3, 32, 48), 'VALID', True, True, True, False)
+    conv4 = add_conv(conv3, (3, 3, 48, 64), 'SAME', True, True, False, True, keep_prob)
+    conv5 = add_conv(conv4, (4, 4, 64, 80), 'VALID', True, True, True, False)
 
 
     with tf.name_scope('Layer'):
         fc0 = flatten(conv5)
 
         with tf.name_scope('Weight'):
-            fc1_W = tf.Variable(tf.truncated_normal(shape = (256, 256), mean = mu, stddev = sigma))
+            fc1_W = tf.Variable(tf.truncated_normal(shape = (320, 320), mean = mu, stddev = sigma))
         with tf.name_scope('Biases'):
-            fc1_b = tf.Variable(tf.zeros(256))
+            fc1_b = tf.Variable(tf.zeros(320))
         fc1 = tf.matmul(fc0, fc1_W) + fc1_b
         fc1 = tf.layers.batch_normalization(fc1, training = is_training)
         fc1 = tf.nn.dropout(fc1, keep_prob)
@@ -77,7 +77,7 @@ def LeNet(x):
 
     with tf.name_scope('Layer'):
         with tf.name_scope('Weight'):
-            fc2_W = tf.Variable(tf.truncated_normal(shape = (256, 10), mean = mu, stddev = sigma))
+            fc2_W = tf.Variable(tf.truncated_normal(shape = (320, 10), mean = mu, stddev = sigma))
         with tf.name_scope('Biases'):
             fc2_b = tf.Variable(tf.zeros(10))
         logits = tf.matmul(fc1, fc2_W) + fc2_b
@@ -152,7 +152,7 @@ with tf.Session() as sess:
 
             steps += 1
             sess.run(training_operation, feed_dict = {x: batch_x, y: batch_y,
-                        keep_prob:0.7, is_training: True})
+                        keep_prob:0.65, is_training: True})
 
         testing_accuracy = sess.run(accuracy_operation, feed_dict = {x: x_test, y: y_test,
                 keep_prob: 1, is_training:False})

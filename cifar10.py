@@ -13,7 +13,7 @@ x_train, x_validation, y_train, y_validation = train_test_split(x_train, y_train
 # Declare variables
 batch_size = 48
 # 32 examples in a mini-batch, smaller batch size means more updates in one epoch
-epochs = 20 # repeat 100 times
+epochs = 30 # repeat 100 times
 num_classes = 10
 rate = 0.001
 #label_dict = {0: "airplane", 1: "automobile", 2: "bird", 3: "cat", 4: "deer", 5: "dog",
@@ -36,7 +36,7 @@ def LeNet(x):
     mu = 0
     sigma = 0.1
 
-    def add_conv(prev, shape, padding, bn, act, max_pool, keep_rate):
+    def add_conv(prev, shape, padding, bn, act, max_pool, drop, keep_rate = None):
         with tf.name_scope('Layer'):
             with tf.name_scope('Weight'):
                 conv_W = tf.Variable(tf.truncated_normal(shape = shape, mean = mu, stddev = sigma))
@@ -47,7 +47,7 @@ def LeNet(x):
                 conv = tf.layers.batch_normalization(conv, training = is_training)
             if act:
                 conv = tf.nn.relu(conv)
-            if keep_rate:
+            if drop:
                 conv = tf.nn.dropout(conv, keep_rate)
             if max_pool:
                 conv = tf.nn.max_pool(conv, ksize = [1, 2, 2, 1], strides = [1, 2, 2, 1], padding = 'VALID')
@@ -56,14 +56,15 @@ def LeNet(x):
 
     #input: 32*32*3 , output: 28*28*6
     #add_conv(prev, shape, padding, bn, act, max_pool, keep_rate):
-    conv1 = add_conv(x, (3, 3, 3, 6), 'SAME', True, True, False, 0)
-    conv2 = add_conv(conv1, (3, 3, 6, 16), 'SAME', True, True, True, 0)
-    conv3 = add_conv(conv2, (3, 3, 16, 32), 'VALID', True, True, True, 0)
-    conv4 = add_conv(conv3, (4, 4, 32, 64), 'VALID', True, True, True, 0)
+    conv1 = add_conv(x, (3, 3, 3, 6), 'SAME', True, True, False, True, keep_prob)
+    conv2 = add_conv(conv1, (3, 3, 6, 16), 'SAME', True, True, True, False)
+    conv3 = add_conv(conv2, (3, 3, 16, 32), 'VALID', True, True, True, False)
+    conv4 = add_conv(conv3, (3, 3, 32, 64), 'SAME', True, True, False, True, keep_prob)
+    conv5 = add_conv(conv4, (4, 4, 64, 64), 'VALID', True, True, True, False)
 
 
     with tf.name_scope('Layer'):
-        fc0 = flatten(conv4)
+        fc0 = flatten(conv5)
 
         with tf.name_scope('Weight'):
             fc1_W = tf.Variable(tf.truncated_normal(shape = (256, 256), mean = mu, stddev = sigma))
@@ -82,24 +83,6 @@ def LeNet(x):
         logits = tf.matmul(fc1, fc2_W) + fc2_b
         logits = tf.layers.batch_normalization(logits, training = is_training)
         logits = tf.nn.dropout(logits, keep_prob)
-    """
-    with tf.name_scope('Layer'):
-        with tf.name_scope('Weight'):
-            fc2_W = tf.Variable(tf.truncated_normal(shape = (512, 128), mean = mu, stddev = sigma))
-        with tf.name_scope('Biases'):
-            fc2_b = tf.Variable(tf.zeros(128))
-        fc2 = tf.matmul(fc1, fc2_W) + fc2_b
-        fc2 = tf.nn.dropout(fc2, keep_prob)
-        fc2 = tf.nn.relu(fc2)
-
-    with tf.name_scope('Layer'):
-        with tf.name_scope('Weight'):
-            fc3_W = tf.Variable(tf.truncated_normal(shape = (128, 10), mean = mu, stddev = sigma))
-        with tf.name_scope('Biases'):
-            fc3_b = tf.Variable(tf.zeros(10))
-        logits = tf.matmul(fc2, fc3_W) + fc3_b
-        logits = tf.nn.dropout(logits, keep_prob)
-    """
 
     return logits
 
@@ -168,7 +151,7 @@ with tf.Session() as sess:
 
             steps += 1
             sess.run(training_operation, feed_dict = {x: batch_x, y: batch_y,
-                        keep_prob:0.7, is_training: True})
+                        keep_prob:0.8, is_training: True})
 
         testing_accuracy = sess.run(accuracy_operation, feed_dict = {x: x_test, y: y_test,
                 keep_prob: 1, is_training:False})

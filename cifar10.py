@@ -13,7 +13,7 @@ x_train, x_validation, y_train, y_validation = train_test_split(x_train, y_train
 # Declare variables
 batch_size = 48
 # 32 examples in a mini-batch, smaller batch size means more updates in one epoch
-epochs = 30 # repeat 100 times
+epochs = 60 # repeat 100 times
 num_classes = 10
 rate = 0.001
 #label_dict = {0: "airplane", 1: "automobile", 2: "bird", 3: "cat", 4: "deer", 5: "dog",
@@ -95,6 +95,7 @@ with tf.name_scope('Input'):
     is_training = tf.placeholder(tf.bool)
 one_hot_y = tf.squeeze(tf.one_hot(y, 10))
 x = tf.image.random_flip_left_right(x)
+x = tf.image.random_flip_up_down(x)
 x = tf.image.random_brightness(x, max_delta = 0.5)
 x = tf.image.random_contrast(x, 0.1, 0.6)
 
@@ -151,7 +152,7 @@ with tf.Session() as sess:
 
             steps += 1
             sess.run(training_operation, feed_dict = {x: batch_x, y: batch_y,
-                        keep_prob:0.8, is_training: True})
+                        keep_prob:0.7, is_training: True})
 
         testing_accuracy = sess.run(accuracy_operation, feed_dict = {x: x_test, y: y_test,
                 keep_prob: 1, is_training:False})

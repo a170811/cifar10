@@ -42,6 +42,7 @@ def LeNet(x):
         with tf.name_scope('Biases'):
             conv1_b = tf.Variable(tf.zeros(6))
         conv1 = tf.nn.conv2d(x, conv1_W, strides = [1, 1, 1, 1], padding = 'SAME') + conv1_b
+        conv1 = tf.layers.batch_normalization(conv1, training = is_training)
         conv1 = tf.nn.relu(conv1)
 
     with tf.name_scope('Layer'):
@@ -50,6 +51,7 @@ def LeNet(x):
         with tf.name_scope('Biases'):
             conv2_b = tf.Variable(tf.zeros(16))
         conv2 = tf.nn.conv2d(conv1, conv2_W, strides = [1, 1, 1, 1], padding = 'SAME') + conv2_b
+        conv2 = tf.layers.batch_normalization(conv2, training = is_training)
         conv2 = tf.nn.relu(conv2)
         conv2 = tf.nn.max_pool(conv2, ksize = [1, 2, 2, 1], strides = [1, 2, 2, 1], padding = 'VALID')
 
@@ -59,6 +61,7 @@ def LeNet(x):
         with tf.name_scope('Biases'):
             conv3_b = tf.Variable(tf.zeros(32))
         conv3 = tf.nn.conv2d(conv2, conv3_W, strides = [1, 1, 1, 1], padding = 'VALID') + conv3_b
+        conv3 = tf.layers.batch_normalization(conv3, training = is_training)
         conv3 = tf.nn.relu(conv3)
         conv3 = tf.nn.max_pool(conv3, ksize = [1, 2, 2, 1], strides = [1, 2, 2, 1], padding = 'VALID')
 
@@ -68,6 +71,7 @@ def LeNet(x):
         with tf.name_scope('Biases'):
             conv4_b = tf.Variable(tf.zeros(64))
         conv4 = tf.nn.conv2d(conv3, conv4_W, strides = [1, 1, 1, 1], padding = 'VALID') + conv4_b
+        conv4 = tf.layers.batch_normalization(conv4, training = is_training)
         conv4 = tf.nn.relu(conv4)
         conv4 = tf.nn.max_pool(conv4, ksize = [1, 2, 2, 1], strides = [1, 2, 2, 1], padding = 'VALID')
 
@@ -80,6 +84,7 @@ def LeNet(x):
         with tf.name_scope('Biases'):
             fc1_b = tf.Variable(tf.zeros(256))
         fc1 = tf.matmul(fc0, fc1_W) + fc1_b
+        fc1 = tf.layers.batch_normalization(fc1, training = is_training)
         fc1 = tf.nn.dropout(fc1, keep_prob)
         fc1 = tf.nn.relu(fc1)
 
@@ -89,6 +94,7 @@ def LeNet(x):
         with tf.name_scope('Biases'):
             fc2_b = tf.Variable(tf.zeros(10))
         logits = tf.matmul(fc1, fc2_W) + fc2_b
+        logits = tf.layers.batch_normalization(logits, training = is_training)
         logits = tf.nn.dropout(logits, keep_prob)
     """
     with tf.name_scope('Layer'):
@@ -117,6 +123,7 @@ with tf.name_scope('Input'):
     x = tf.placeholder(tf.float32, (None, 32, 32, 3))
     y = tf.placeholder(tf.int32, (None))
     keep_prob = tf.placeholder(tf.float32)
+    is_training = tf.placeholder(tf.bool)
 one_hot_y = tf.squeeze(tf.one_hot(y, 10))
 x = tf.image.random_flip_left_right(x)
 x = tf.image.random_brightness(x, max_delta = 0.5)
@@ -129,8 +136,9 @@ with tf.name_scope('loss'):
     loss = tf.reduce_mean(cross_entropy)
     tf.summary.scalar('loss', loss)
 with tf.name_scope('train'):
-    optimizer = tf.train.AdamOptimizer(learning_rate = rate)
-    training_operation = optimizer.minimize(loss)
+    with tf.control_dependencies(tf.get_collection(tf.GraphKeys.UPDATE_OPS)):
+        optimizer = tf.train.AdamOptimizer(learning_rate = rate)
+        training_operation = optimizer.minimize(loss)
 
 
 
@@ -163,14 +171,22 @@ with tf.Session() as sess:
             batch_x, batch_y = x_train[offset:end], y_train[offset:end]
 
             if steps%200 == 0:
-                train_result = sess.run(merged, feed_dict = {x: batch_x, y: batch_y, keep_prob: 1})
+                train_result = sess.run(merged, feed_dict = {x: batch_x, y: batch_y,
+                        keep_prob: 1, is_training: False})
                 train_writer.add_summary(train_result, steps)
 
-                test_result = sess.run(merged, feed_dict = {x: x_validation, y: y_validation, keep_prob: 1})
+
+                test_result = sess.run(merged, feed_dict = {x: x_validation, y: y_validation,
+                        keep_prob: 1, is_training: False})
                 test_writer.add_summary(test_result, steps)
+
             steps += 1
-            sess.run(training_operation, feed_dict = {x: batch_x, y: batch_y, keep_prob: 0.7})
-        testing_accuracy = sess.run(accuracy_operation, feed_dict = {x: x_test, y: y_test, keep_prob: 1})
+            sess.run(training_operation, feed_dict = {x: batch_x, y: batch_y,
+                        keep_prob:0.7, is_training: True})
+
+        testing_accuracy = sess.run(accuracy_operation, feed_dict = {x: x_test, y: y_test,
+                keep_prob: 1, is_training:False})
+
         file.write('EPOCH {} ...\n'.format(i + 1))
         file.write('Testing Accuracy = {:.3f}\n'.format(testing_accuracy))
         file.write('\n')

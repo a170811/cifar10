@@ -3,8 +3,12 @@ from tensorflow.contrib.layers import flatten
 import random
 import numpy as np
 from sklearn.utils import shuffle
+from sklearn.model_selection import train_test_split
 
 (x_train, y_train), (x_test, y_test) = tf.keras.datasets.cifar10.load_data()
+x_train, y_train = shuffle(x_train, y_train)
+x_train, x_validation, y_train, y_validation = train_test_split(x_train, y_train,
+        test_size = 0.1)
 
 # Declare variables
 batch_size = 48
@@ -12,14 +16,17 @@ batch_size = 48
 epochs = 20 # repeat 100 times
 num_classes = 10
 rate = 0.001
-#label_dict = {0: "airplane", 1: "automobile", 2: "bird", 3: "cat", 4: "deer", 5: "dog", 6: "frog", 7: "horse",
-#                  8: "ship", 9: "truck"}
-#class_names = ['airplane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck']
+#label_dict = {0: "airplane", 1: "automobile", 2: "bird", 3: "cat", 4: "deer", 5: "dog",
+#        6: "frog", 7: "horse", 8: "ship", 9: "truck"}
+#class_names = ['airplane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse',
+#        'ship', 'truck']
 
 
 x_train = x_train.astype('float32')
+x_validation = x_validation.astype('float32')
 x_test = x_test.astype('float32')
 x_train  /= 255
+x_validation  /= 255
 x_test /= 255
 
 
@@ -135,18 +142,6 @@ with tf.name_scope('acc'):
 saver = tf.train.Saver()
 
 
-def evaluate(X_data, y_data):
-    num_examples = len(X_data)
-    total_accuracy = 0
-    sess = tf.get_default_session()
-
-    for offset in range(0, num_examples, batch_size):
-        batch_x, batch_y = X_data[offset:offset+batch_size], y_data[offset:offset+batch_size]
-        accuracy = sess.run(accuracy_operation, feed_dict = {x: batch_x, y: batch_y})
-        total_accuracy += (accuracy * len(batch_x))
-    return total_accuracy / num_examples
-
-
 ###training
 with tf.Session() as sess:
     steps = 0
@@ -171,13 +166,13 @@ with tf.Session() as sess:
                 train_result = sess.run(merged, feed_dict = {x: batch_x, y: batch_y, keep_prob: 1})
                 train_writer.add_summary(train_result, steps)
 
-                test_result = sess.run(merged, feed_dict = {x: x_test, y: y_test, keep_prob: 1})
+                test_result = sess.run(merged, feed_dict = {x: x_validation, y: y_validation, keep_prob: 1})
                 test_writer.add_summary(test_result, steps)
             steps += 1
             sess.run(training_operation, feed_dict = {x: batch_x, y: batch_y, keep_prob: 0.7})
-        validation_accuracy = sess.run(accuracy_operation, feed_dict = {x: x_test, y: y_test, keep_prob: 1})
+        testing_accuracy = sess.run(accuracy_operation, feed_dict = {x: x_test, y: y_test, keep_prob: 1})
         file.write('EPOCH {} ...\n'.format(i + 1))
-        file.write('Validation Accuracy = {:.3f}\n'.format(validation_accuracy))
+        file.write('Testing Accuracy = {:.3f}\n'.format(testing_accuracy))
         file.write('\n')
 
     saver.save(sess, './cifar10')

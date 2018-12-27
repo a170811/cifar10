@@ -25,6 +25,7 @@ epochs = 60 # repeat 100 times
 num_classes = 10
 rate = 0.001
 save_file = './model.ckpt'
+lamda = 1
 #label_dict = {0: "airplane", 1: "automobile", 2: "bird", 3: "cat", 4: "deer", 5: "dog",
 #        6: "frog", 7: "horse", 8: "ship", 9: "truck"}
 #class_names = ['airplane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse',
@@ -114,7 +115,7 @@ if 'training' == flag:
 logits = LeNet(x)
 cross_entropy = tf.nn.softmax_cross_entropy_with_logits_v2(labels = tf.stop_gradient(one_hot_y), logits = logits)
 with tf.name_scope('loss'):
-    loss = tf.reduce_mean(cross_entropy)
+    loss = tf.reduce_mean(cross_entropy) + tf.reduce_mean(tf.pow(logits, 2)) * lamda
     tf.summary.scalar('loss', loss)
 with tf.name_scope('train'):
     with tf.control_dependencies(tf.get_collection(tf.GraphKeys.UPDATE_OPS)):

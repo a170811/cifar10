@@ -7,11 +7,13 @@ from tensorflow.contrib.layers import flatten
 import numpy as np
 from sklearn.utils import shuffle
 from sklearn.model_selection import train_test_split
+import numpy as np
+import cv2
 
-if len(argv) < 2:
-    flag = 'training'
-else:
+if len(argv) > 2 and 'test' == argv[1]:
     flag = 'testing'
+else:
+    flag = 'training'
 
 (x_train, y_train), (x_test, y_test) = tf.keras.datasets.cifar10.load_data()
 x_train, y_train = shuffle(x_train, y_train)
@@ -26,10 +28,11 @@ num_classes = 10
 rate = 0.001
 save_file = './model.ckpt'
 lamda = 1
+testing_path = './testing_set'
+class_names = ['airplane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse',
+        'ship', 'truck']
 #label_dict = {0: "airplane", 1: "automobile", 2: "bird", 3: "cat", 4: "deer", 5: "dog",
 #        6: "frog", 7: "horse", 8: "ship", 9: "truck"}
-#class_names = ['airplane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse',
-#        'ship', 'truck']
 
 
 x_train = x_train.astype('float32')
@@ -178,7 +181,13 @@ if 'training' == flag:
 else:
     with tf.Session() as sess:
         saver.restore(sess, save_file)
-        testing_accuracy = sess.run(accuracy_operation, feed_dict = {x: x_test, y: y_test,
-                keep_prob: 1, is_training:False})
 
-        print('Testing Accuracy = {:.3f}\n'.format(testing_accuracy))
+        ans = os.listdir(testing_path)
+        imgs = [cv2.imread(os.path.join(testing_path, x)) for x in ans]
+        imgs = np.array(imgs).astype('float32') / 255
+
+        predict = sess.run(logits, feed_dict = {x: imgs, keep_prob: 1, is_training: False})
+        predict = [class_names[i] for i in np.argmax(predict, 1)]
+
+        for i, j in zip(predict, ans):
+            print('predict: {:15s} ans: {}'.format(i, j))

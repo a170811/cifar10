@@ -10,7 +10,7 @@ from sklearn.model_selection import train_test_split
 import numpy as np
 import cv2
 
-if len(argv) > 2 and 'test' == argv[1]:
+if len(argv) > 1 and 'test' == argv[1]:
     flag = 'testing'
 else:
     flag = 'training'
